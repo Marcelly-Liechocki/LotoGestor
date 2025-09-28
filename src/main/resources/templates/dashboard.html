@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="pt-br" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <title>LotoGestor - Operador</title>
+</head>
+<body class="bg-gray-50">
+  <div class="max-w-3xl mx-auto py-8">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-bold">Olá, {Operador}</h2>
+      <a th:href="@{/logout}" class="text-sm underline">Sair</a>
+    </div>
+
+    <!-- ============ Abertura de Caixa ============ -->
+    <section id="abertura" class="bg-white border rounded-xl p-6 mb-6">
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <span>🔒</span>
+          <h3 class="text-xl font-semibold">Abertura de Caixa</h3>
+        </div>
+        <span class="text-sm text-gray-500"
+              th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}">dd/mm/aaaa</span>
+      </div>
+
+      <hr class="mb-5"/>
+
+      <form th:action="@{/aberturas}" th:object="${abertura}" method="post"
+            class="grid grid-cols-2 gap-6" id="formAbertura"
+            onsubmit="return confirmarCampos('abrir o caixa')">
+        <!-- Coluna esquerda -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{moedas}">Moedas</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{moedas}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-abertura="money">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{bolao}">Bolão</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{bolao}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-abertura="money">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{telesena}">Tele-Sena</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{telesena}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-abertura="money">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{deposito}">Depósito</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{deposito}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-abertura="money">
+            </div>
+          </div>
+        </div>
+
+        <!-- Coluna direita -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{dinheiro}">Dinheiro</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{dinheiro}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-abertura="money">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{instantaneas}">Instantâneas</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{instantaneas}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-abertura="money">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{fiados}">Fiados</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{fiados}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-abertura="money">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{retirada}">Retirada</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{retirada}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-abertura="money">
+            </div>
+          </div>
+        </div>
+
+        <!-- total + botão -->
+        <div class="col-span-2 grid grid-cols-2 gap-6 items-end pt-2">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Total em Caixa:</label>
+            <input id="totalAbertura" type="text" readonly
+                   class="w-full rounded-md bg-gray-100 px-3 py-2 outline-none"
+                   placeholder="R$ 0,00">
+          </div>
+          <div class="flex justify-end">
+            <button class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg font-semibold">
+              Abrir Caixa
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- JS: soma automática Abertura -->
+      <script>
+        (function () {
+          function recompute() {
+            let total = 0;
+            document.querySelectorAll('[data-abertura="money"]').forEach(el => {
+              const v = parseFloat(el.value);
+              if (!isNaN(v)) total += v;
+            });
+            const out = document.getElementById('totalAbertura');
+            out.value = total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          }
+          document.querySelectorAll('[data-abertura="money"]').forEach(el => {
+            el.addEventListener('input', recompute);
+            el.addEventListener('change', recompute);
+          });
+          recompute();
+        })();
+      </script>
+    </section>
+
+    <!-- ============ Fiados ============ -->
+    <section id="fiados" class="bg-white border rounded-xl p-6 mb-6">
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold">Fiados</h3>
+        <span class="text-sm text-gray-500"
+              th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}">dd/mm/aaaa</span>
+      </div>
+
+      <!-- Barra com botão Cadastrar Pessoa -->
+      <div class="bg-gray-50 rounded-md p-3 mb-4 flex items-center justify-between">
+        <span class="text-sm text-gray-600">Cadastre Pessoa — Novo Fiado</span>
+        <button type="button" id="btnAbrirCadastroPessoa"
+                class="text-sm px-3 py-1 rounded-md border hover:bg-gray-100">
+          Cadastrar Pessoa
+        </button>
+      </div>
+
+      <!-- Painel de cadastro de pessoa (toggle) -->
+      <div id="painelPessoa" class="hidden border rounded-lg p-4 mb-5">
+        <form method="post" th:action="@{/pessoas}" class="flex gap-3 items-end">
+          <div class="flex-1">
+            <label class="block text-sm font-medium mb-1">Nome da nova pessoa</label>
+            <input name="nomePessoa" type="text" required
+                   class="w-full rounded-md bg-gray-100 px-3 py-2 outline-none"
+                   placeholder="Ex.: Maria dos Santos">
+          </div>
+          <button class="bg-black text-white px-4 py-2 rounded-md">Salvar pessoa</button>
+          <button type="button" id="btnFecharCadastroPessoa"
+                  class="px-3 py-2 rounded-md border">Cancelar</button>
+        </form>
+      </div>
+
+      <!-- Form de novo fiado -->
+      <form th:action="@{/fiados}" th:object="${novoFiado}" method="post"
+            class="grid gap-5" onsubmit="return confirmarCampos('adicionar o fiado')">
+        <!-- Pessoa: agora é dropdown -->
+        <div>
+          <label class="block text-gray-700 font-medium mb-1" for="selectPessoa">Pessoa</label>
+          <select id="selectPessoa" th:field="*{pessoa}"
+                  class="w-full rounded-md bg-gray-100 px-3 py-2 outline-none">
+            <option value="" disabled selected>Selecione uma pessoa</option>
+            <option th:each="p : ${listaPessoas}"
+                    th:value="${p.nome}"
+                    th:text="${p.nome}">Maria</option>
+          </select>
+        </div>
+
+        <!-- Valor: com R$ e sem setas -->
+        <div>
+          <label class="block text-gray-700 font-medium mb-1" th:for="*{valor}">Valor</label>
+          <div class="relative">
+            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+            <input th:field="*{valor}" type="number" step="0.01" placeholder="0,00"
+                   class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-gray-700 font-medium mb-1" th:for="*{descricao}">Descrição</label>
+          <input th:field="*{descricao}" type="text"
+                 class="w-full rounded-md bg-gray-100 px-3 py-2 outline-none"
+                 placeholder="Ex.: Jogo - concurso 1234">
+        </div>
+
+        <div class="flex justify-end">
+          <button class="bg-black text-white px-6 py-2 rounded-lg font-semibold">
+            Adicionar Fiado
+          </button>
+        </div>
+      </form>
+
+      <!-- Tabela -->
+      <div class="mt-6">
+        <table class="w-full text-sm">
+          <thead>
+          <tr class="text-left text-gray-500 border-b">
+            <th class="py-2">Data</th>
+            <th>Pessoa</th>
+            <th>Valor</th>
+            <th>Descrição</th>
+            <th></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr th:each="f : ${listaFiados}" class="border-b">
+            <td class="py-2" th:text="${#temporals.format(f.data, 'dd/MM/yyyy')}">01/01/2025</td>
+            <td th:text="${f.pessoa}">Nome</td>
+            <td th:text="${#numbers.formatDecimal(f.valor, 1, 'COMMA', 2, 'POINT')}">0,00</td>
+            <td th:text="${f.descricao}">...</td>
+            <td class="text-right">
+              <form th:action="@{'/fiados/' + ${f.id} + '/delete'}" method="post">
+                <button class="text-red-600 text-xs underline">remover</button>
+              </form>
+            </td>
+          </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Aviso quando caixa não está aberto -->
+    <div class="mb-6" th:if="${!hasCaixaAberto}">
+      <div class="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4">
+        Abra o caixa para habilitar o <strong>Fechamento de Caixa</strong>.
+      </div>
+    </div>
+
+    <!-- ============ Fechamento de Caixa ============ -->
+    <section id="fechamento" class="bg-white border rounded-xl p-6" th:if="${hasCaixaAberto}">
+      <div class="flex justify-between items-center mb-4">
+        <div class="flex items-center gap-2">
+          <span>🔒</span>
+          <h3 class="text-xl font-semibold">Fechamento de Caixa</h3>
+        </div>
+        <span class="text-sm text-gray-500"
+              th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}">dd/mm/aaaa</span>
+      </div>
+
+      <hr class="mb-5"/>
+
+      <form th:action="@{/fechamentos}" th:object="${fechamento}" method="post"
+            class="grid grid-cols-2 gap-6" id="formFechamento"
+            onsubmit="return confirmarCampos('fechar o caixa')">
+
+        <!-- coluna esquerda -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{dinheiro}">Dinheiro</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{dinheiro}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-fechamento="money">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{depositos}">Depósitos</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{depositos}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-fechamento="money">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-2">Moedas (por denominação)</label>
+            <div class="grid grid-cols-5 gap-2 text-xs text-gray-500 mb-1">
+              <span>0,05</span><span>0,10</span><span>0,25</span><span>0,50</span><span>1,00</span>
+            </div>
+            <div class="grid grid-cols-5 gap-2">
+              <input type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 px-3 py-2 outline-none"
+                     data-fechamento="money">
+              <input type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 px-3 py-2 outline-none"
+                     data-fechamento="money">
+              <input type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 px-3 py-2 outline-none"
+                     data-fechamento="money">
+              <input type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 px-3 py-2 outline-none"
+                     data-fechamento="money">
+              <input type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 px-3 py-2 outline-none"
+                     data-fechamento="money">
+            </div>
+          </div>
+        </div>
+
+        <!-- coluna direita -->
+        <div class="space-y-5">
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{cheques}">Cheques</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{cheques}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-fechamento="money">
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-medium mb-1" th:for="*{fiados}">Fiados</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+              <input th:field="*{fiados}" type="number" step="0.01" placeholder="0,00"
+                     class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                     data-fechamento="money">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-gray-700 font-medium mb-1" th:for="*{bolao}">Bolão</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+                <input th:field="*{bolao}" type="number" step="0.01" placeholder="0,00"
+                       class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                       data-fechamento="money">
+              </div>
+            </div>
+            <div>
+              <label class="block text-gray-700 font-medium mb-1" th:for="*{telesena}">Tele-Sena</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+                <input th:field="*{telesena}" type="number" step="0.01" placeholder="0,00"
+                       class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                       data-fechamento="money">
+              </div>
+            </div>
+            <div>
+              <label class="block text-gray-700 font-medium mb-1" th:for="*{instantaneas}">Instantâneas</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+                <input th:field="*{instantaneas}" type="number" step="0.01" placeholder="0,00"
+                       class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                       data-fechamento="money">
+              </div>
+            </div>
+            <div>
+              <label class="block text-gray-700 font-medium mb-1" th:for="*{telesenasTrocadas}">Tele-Senas Trocadas</label>
+              <div class="relative">
+                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 select-none">R$</span>
+                <input th:field="*{telesenasTrocadas}" type="number" step="0.01" placeholder="0,00"
+                       class="money-input w-full rounded-md bg-gray-100 pl-10 pr-3 py-2 outline-none"
+                       data-fechamento="money">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- total + botão -->
+        <div class="col-span-2 grid grid-cols-2 gap-6 items-end pt-2">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-1">Total em Caixa:</label>
+            <input id="totalFechamento" type="text" readonly
+                   class="w-full rounded-md bg-gray-100 px-3 py-2 outline-none"
+                   placeholder="R$ 0,00">
+          </div>
+          <div class="flex justify-end">
+            <button class="bg-rose-500 hover:bg-rose-600 text-white px-6 py-3 rounded-lg font-semibold">
+              Fechar Caixa
+            </button>
+          </div>
+        </div>
+      </form>
+
+      <!-- JS: soma automática Fechamento -->
+      <script>
+        (function () {
+          function somaFechamento() {
+            let total = 0;
+            document.querySelectorAll('#formFechamento [data-fechamento="money"]').forEach(el => {
+              const v = parseFloat(el.value);
+              if (!isNaN(v)) total += v;
+            });
+            document.getElementById('totalFechamento').value =
+              total.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+          }
+          document.querySelectorAll('#formFechamento [data-fechamento="money"]').forEach(el => {
+            el.addEventListener('input', somaFechamento);
+            el.addEventListener('change', somaFechamento);
+          });
+          somaFechamento();
+        })();
+      </script>
+    </section>
+  </div>
+
+  <!-- ===== CSS global: esconder setas dos number ===== -->
+  <style>
+    /* Chrome / Safari */
+    .money-input::-webkit-outer-spin-button,
+    .money-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    /* Firefox + padrão */
+    .money-input { appearance: textfield; -moz-appearance: textfield; }
+  </style>
+
+  <!-- ===== TOAST de sucesso + confirmação ===== -->
+  <div id="toast"
+       th:if="${msg}"
+       th:text="${msg}"
+       class="fixed top-5 right-5 z-50 hidden px-4 py-3 rounded-lg text-white bg-emerald-600 shadow-lg">
+    sucesso
+  </div>
+  <script>
+    function confirmarCampos(acao){
+      return confirm('Confira se todos os campos foram preenchidos corretamente antes de ' + acao + '.');
+    }
+    (function(){
+      var t = document.getElementById('toast');
+      if(t){
+        t.classList.remove('hidden');
+        setTimeout(function(){ t.classList.add('hidden'); }, 2800);
+      }
+    })();
+  </script>
+
+  <!-- ===== Toggle do "Cadastrar Pessoa" (robusto) ===== -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const abrir  = document.getElementById('btnAbrirCadastroPessoa');
+      const fechar = document.getElementById('btnFecharCadastroPessoa');
+      const painel = document.getElementById('painelPessoa');
+      const input  = document.querySelector('#painelPessoa input[name="nomePessoa"]');
+
+      if (abrir && painel) {
+        abrir.addEventListener('click', function (e) {
+          e.preventDefault();
+          painel.classList.toggle('hidden');
+          if (!painel.classList.contains('hidden') && input) {
+            setTimeout(() => input.focus(), 0);
+          }
+        });
+      }
+      if (fechar && painel) {
+        fechar.addEventListener('click', function (e) {
+          e.preventDefault();
+          painel.classList.add('hidden');
+        });
+      }
+    });
+  </script>
+</body>
+</html>
