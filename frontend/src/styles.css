@@ -1,0 +1,272 @@
+:root {
+  color-scheme: light;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  --bg: #f4efe9;
+  --panel: #fdfcf9;
+  --ink: #1c1c1c;
+  --muted: #5b5957;
+  --accent: #ff7a59;
+  --accent-dark: #d45635;
+  --mint: #c8f1e6;
+  --shadow: 0 24px 40px rgba(25, 20, 15, 0.12);
+  --radius: 18px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background:
+    radial-gradient(circle at top left, #f6d5b8 0%, rgba(246, 213, 184, 0) 45%),
+    radial-gradient(circle at top right, #c8f1e6 0%, rgba(200, 241, 230, 0) 50%),
+    var(--bg);
+  color: var(--ink);
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 48px 24px 80px;
+}
+
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 24px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+}
+
+.eyebrow {
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin: 0 0 10px;
+}
+
+h1 {
+  font-size: clamp(2rem, 4vw, 3rem);
+  margin: 0 0 12px;
+}
+
+.subtitle {
+  margin: 0;
+  color: var(--muted);
+  max-width: 520px;
+}
+
+.status-card {
+  background: var(--panel);
+  padding: 20px 24px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  min-width: 240px;
+}
+
+.label {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.status {
+  font-family: "Space Mono", ui-monospace, monospace;
+  font-size: 1.4rem;
+  margin: 8px 0 6px;
+}
+
+.status.open {
+  color: #0c7a5f;
+}
+
+.status.closed {
+  color: #a33b3b;
+}
+
+.hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.banner {
+  padding: 14px 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.banner.success {
+  background: #dbf4e4;
+  color: #175c36;
+}
+
+.banner.error {
+  background: #fde2e2;
+  color: #8a2b2b;
+}
+
+.loading {
+  padding: 32px;
+  font-size: 1.1rem;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.panel {
+  background: var(--panel);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-sub {
+  color: var(--muted);
+  margin-top: -6px;
+}
+
+.counter {
+  background: var(--mint);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.form input {
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #e1ddd7;
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+.form input:focus {
+  outline: 2px solid rgba(255, 122, 89, 0.3);
+  border-color: var(--accent);
+}
+
+button {
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: none;
+  background: var(--accent);
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 20px rgba(255, 122, 89, 0.25);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+.table {
+  display: grid;
+  gap: 8px;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 120px 1fr 90px;
+  gap: 12px;
+  align-items: center;
+  font-size: 0.9rem;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f5f2ee;
+}
+
+.table-row.head {
+  font-weight: 600;
+  background: transparent;
+  padding: 0 12px;
+}
+
+.table-row button {
+  background: transparent;
+  color: var(--accent-dark);
+  border: 1px solid #f1c4b6;
+  box-shadow: none;
+  padding: 8px 10px;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tags span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #f2efe9;
+  font-size: 0.85rem;
+}
+
+.grid-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.grid-form .full {
+  grid-column: 1 / -1;
+}
+
+.span-2 {
+  grid-column: span 2;
+}
+
+@media (max-width: 900px) {
+  .span-2 {
+    grid-column: span 1;
+  }
+
+  .table-row {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .table-row span:nth-child(3),
+  .table-row span:nth-child(4) {
+    grid-column: span 2;
+  }
+
+  .table-row button {
+    grid-column: span 2;
+  }
+}
