@@ -37,12 +37,20 @@ public class DashboardController {
   }
 
   @GetMapping("/login")
-  public String login() { return "login"; }
+  public String login() {
+    return "login";
+  }
 
   // ======== Abertura ========
   @PostMapping("/aberturas")
-  public String criarAbertura(@Valid AberturaCaixa abertura, BindingResult br, RedirectAttributes ra) {
-    if (br.hasErrors()) return "dashboard";
+  public String criarAbertura(@Valid AberturaCaixa abertura,
+                              BindingResult br,
+                              RedirectAttributes ra,
+                              Model model) {
+    if (br.hasErrors()) {
+      // Reconstroi os dados do dashboard para evitar NullPointer/SpEL
+      return dashboard(model);
+    }
     aberturas.save(abertura);
     ra.addFlashAttribute("msg", "Caixa aberto com sucesso");
     return "redirect:/dashboard#abertura";
@@ -64,8 +72,14 @@ public class DashboardController {
 
   // ======== Fiados ========
   @PostMapping("/fiados")
-  public String criarFiado(@Valid Fiado fiado, BindingResult br, RedirectAttributes ra) {
-    if (br.hasErrors()) return "dashboard";
+  public String criarFiado(@Valid Fiado fiado,
+                           BindingResult br,
+                           RedirectAttributes ra,
+                           Model model) {
+    if (br.hasErrors()) {
+      // Reconstroi o modelo para a tela do dashboard
+      return dashboard(model);
+    }
     fiados.save(fiado);
     ra.addFlashAttribute("msg", "Fiado adicionado com sucesso");
     return "redirect:/dashboard#fiados";
@@ -79,8 +93,15 @@ public class DashboardController {
 
   // ======== Fechamento ========
   @PostMapping("/fechamentos")
-  public String criarFechamento(@Valid FechamentoCaixa fechamento, BindingResult br, RedirectAttributes ra) {
-    if (br.hasErrors()) return "dashboard";
+  public String criarFechamento(@Valid FechamentoCaixa fechamento,
+                                BindingResult br,
+                                RedirectAttributes ra,
+                                Model model) {
+    if (br.hasErrors()) {
+      // Aqui era onde dava o erro 500: voltava "seco" para dashboard
+      // Agora o modelo é montado de novo antes de renderizar a view
+      return dashboard(model);
+    }
     fechamentos.save(fechamento);
     ra.addFlashAttribute("msg", "Caixa fechado com sucesso");
     return "redirect:/dashboard#fechamento";
@@ -89,9 +110,17 @@ public class DashboardController {
   // ======== Dashboard (ÚNICO) ========
   @GetMapping({"/", "/dashboard"})
   public String dashboard(Model model) {
-    model.addAttribute("abertura", new AberturaCaixa());
-    model.addAttribute("novoFiado", new Fiado());
-    model.addAttribute("fechamento", new FechamentoCaixa());
+    // Objetos usados pelos formulários na tela
+    if (!model.containsAttribute("abertura")) {
+      model.addAttribute("abertura", new AberturaCaixa());
+    }
+    if (!model.containsAttribute("novoFiado")) {
+      model.addAttribute("novoFiado", new Fiado());
+    }
+    if (!model.containsAttribute("fechamento")) {
+      model.addAttribute("fechamento", new FechamentoCaixa());
+    }
+
     model.addAttribute("listaFiados", fiados.findAll());
 
     List<Pessoa> listaPessoas = pessoas.findAll();
