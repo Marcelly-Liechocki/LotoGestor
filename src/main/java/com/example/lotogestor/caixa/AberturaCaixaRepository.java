@@ -5,4 +5,5 @@ import java.time.LocalDate;
 
 public interface AberturaCaixaRepository extends JpaRepository<AberturaCaixa, Long> {
   boolean existsByData(LocalDate data);
+  boolean existsByDataAndOperadorId(LocalDate data, Long operadorId);
 }

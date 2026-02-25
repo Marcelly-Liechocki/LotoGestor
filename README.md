@@ -4,6 +4,7 @@
 
 - Backend: Spring Boot (API em `/api`)
 - Frontend: React + Vite (pasta `frontend`)
+- Login inicial (admin): `admin@lotogestor.com` / `123456`
 
 ## Como rodar
 

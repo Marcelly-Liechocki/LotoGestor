@@ -1,358 +1,693 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
-  createAbertura,
-  createFechamento,
-  createFiado,
-  createPessoa,
-  deleteFiado,
-  getDashboard
+  createUsuario,
+  deleteUsuario,
+  getAdminDashboard,
+  getMe,
+  listFiados,
+  listOperadores,
+  login,
+  logout,
+  updateUsuario,
+  uploadFoto
 } from "./api.js";
 
-const today = () => new Date().toISOString().slice(0, 10);
-
-const emptyAbertura = {
-  data: today(),
-  moedas: "0.00",
-  dinheiro: "0.00",
-  bolao: "0.00",
-  instantaneas: "0.00",
-  telesena: "0.00",
-  fiados: "0.00",
-  deposito: "0.00",
-  retirada: "0.00"
-};
-
-const emptyFechamento = {
-  data: today(),
-  dinheiro: "0.00",
-  cheques: "0.00",
-  depositos: "0.00",
-  fiados: "0.00",
-  totalMoedas: "0.00",
-  bolao: "0.00",
-  telesena: "0.00",
-  instantaneas: "0.00",
-  telesenasTrocadas: "0.00"
-};
-
-const emptyFiado = {
-  data: today(),
-  pessoa: "",
-  valor: "",
-  descricao: ""
-};
+const tabs = ["Visão Geral", "Caixas", "Fiados", "Relatórios"];
 
 export default function App() {
-  const [dashboard, setDashboard] = useState({
-    fiados: [],
-    pessoas: [],
-    hasCaixaAberto: false
-  });
+  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [notice, setNotice] = useState("");
-  const [error, setError] = useState("");
-
-  const [novaPessoa, setNovaPessoa] = useState("");
-  const [novoFiado, setNovoFiado] = useState(emptyFiado);
-  const [abertura, setAbertura] = useState(emptyAbertura);
-  const [fechamento, setFechamento] = useState(emptyFechamento);
-
-  const pessoasNomes = useMemo(
-    () => dashboard.pessoas.map((pessoa) => pessoa.nome),
-    [dashboard.pessoas]
-  );
-
-  async function loadDashboard() {
-    setLoading(true);
-    try {
-      const data = await getDashboard();
-      setDashboard(data);
-    } catch (err) {
-      setError(err.message || "Erro ao carregar dashboard");
-    } finally {
-      setLoading(false);
-    }
-  }
+  const [authError, setAuthError] = useState("");
 
   useEffect(() => {
-    loadDashboard();
+    getMe()
+      .then((data) => {
+        if (data) {
+          setUser(data);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
 
-  function resetMessages() {
-    setNotice("");
-    setError("");
-  }
-
-  async function handlePessoaSubmit(event) {
-    event.preventDefault();
-    resetMessages();
+  async function handleLogin(email, senha) {
+    setAuthError("");
     try {
-      await createPessoa({ nome: novaPessoa });
-      setNovaPessoa("");
-      setNotice("Pessoa cadastrada com sucesso.");
-      await loadDashboard();
+      const data = await login(email, senha);
+      setUser(data);
     } catch (err) {
-      setError(err.message || "Erro ao cadastrar pessoa");
+      setAuthError("Login ou senha inválidos.");
     }
   }
 
-  async function handleFiadoSubmit(event) {
-    event.preventDefault();
-    resetMessages();
+  async function handleLogout() {
     try {
-      await createFiado({
-        ...novoFiado,
-        valor: Number(novoFiado.valor)
-      });
-      setNovoFiado(emptyFiado);
-      setNotice("Fiado lançado com sucesso.");
-      await loadDashboard();
+      await logout();
     } catch (err) {
-      setError(err.message || "Erro ao lançar fiado");
+      // Ignora erro de logout para permitir sair do app localmente
     }
+    setUser(null);
   }
 
-  async function handleFiadoDelete(id) {
-    resetMessages();
-    try {
-      await deleteFiado(id);
-      setNotice("Fiado removido.");
-      await loadDashboard();
-    } catch (err) {
-      setError(err.message || "Erro ao remover fiado");
-    }
+  if (loading) {
+    return <div className="loading">Carregando...</div>;
   }
 
-  async function handleAberturaSubmit(event) {
-    event.preventDefault();
-    resetMessages();
-    try {
-      await createAbertura(formatCaixaPayload(abertura));
-      setAbertura(emptyAbertura);
-      setNotice("Abertura de caixa registrada.");
-      await loadDashboard();
-    } catch (err) {
-      setError(err.message || "Erro ao abrir caixa");
-    }
+  if (!user) {
+    return <LoginView onSubmit={handleLogin} error={authError} />;
   }
 
-  async function handleFechamentoSubmit(event) {
-    event.preventDefault();
-    resetMessages();
-    try {
-      await createFechamento(formatCaixaPayload(fechamento));
-      setFechamento(emptyFechamento);
-      setNotice("Fechamento de caixa registrado.");
-      await loadDashboard();
-    } catch (err) {
-      setError(err.message || "Erro ao fechar caixa");
-    }
-  }
-
-  function formatCaixaPayload(values) {
-    const payload = { ...values };
-    Object.keys(payload).forEach((key) => {
-      if (key !== "data") {
-        payload[key] = Number(payload[key]);
-      }
-    });
-    return payload;
+  if (user.role === "ADMIN") {
+    return <AdminDashboard user={user} onLogout={handleLogout} />;
   }
 
   return (
-    <div className="page">
-      <header className="hero">
+    <div className="placeholder">
+      <h2>Área em construção</h2>
+      <p>As telas de gerente e operador serão adicionadas em seguida.</p>
+      <button type="button" onClick={handleLogout}>Sair</button>
+    </div>
+  );
+}
+
+function LoginView({ onSubmit, error }) {
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+
+  return (
+    <div className="login-page">
+      <form
+        className="login-card"
+        onSubmit={(event) => {
+          event.preventDefault();
+          onSubmit(email, senha);
+        }}
+      >
+        <h1>LotoGestor</h1>
+        <p>Faça login para acessar o sistema</p>
+        <label>
+          Usuário
+          <input
+            type="email"
+            placeholder="Digite seu usuário"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            required
+          />
+        </label>
+        <label>
+          Senha
+          <input
+            type="password"
+            placeholder="Digite sua senha"
+            value={senha}
+            onChange={(event) => setSenha(event.target.value)}
+            required
+          />
+        </label>
+        {error && <span className="error-text">{error}</span>}
+        <button type="submit">Entrar</button>
+      </form>
+    </div>
+  );
+}
+
+function AdminDashboard({ user, onLogout }) {
+  const [activeTab, setActiveTab] = useState("Visão Geral");
+  const [dashboard, setDashboard] = useState({
+    instantaneas: 0,
+    marketplace: 0,
+    telesenas: 0,
+    totalReceber: 0
+  });
+  const [operadores, setOperadores] = useState([]);
+  const [fiados, setFiados] = useState([]);
+  const [fiadoFilters, setFiadoFilters] = useState({
+    operadorId: "",
+    pessoa: "",
+    dataInicio: "",
+    dataFim: ""
+  });
+  const [userModalMode, setUserModalMode] = useState(null);
+  const [editingUser, setEditingUser] = useState(null);
+
+  useEffect(() => {
+    getAdminDashboard().then(setDashboard).catch(() => {});
+    listOperadores().then(setOperadores).catch(() => {});
+    listFiados().then(setFiados).catch(() => {});
+  }, []);
+
+  async function handleDeleteUser(id) {
+    const ok = window.confirm("Deseja excluir este usuario?");
+    if (!ok) return;
+    try {
+      await deleteUsuario(id);
+      setOperadores((prev) => prev.filter((item) => item.id !== id));
+    } catch (err) {
+      // no-op for now
+    }
+  }
+
+  const fiadoStats = useMemo(() => {
+    let pendente = 0;
+    let pago = 0;
+    fiados.forEach((fiado) => {
+      const valor = Number(fiado.valor || 0);
+      if (fiado.status === "PAGO") {
+        pago += valor;
+      } else {
+        pendente += valor;
+      }
+    });
+    return {
+      pendente,
+      pago,
+      quantidade: fiados.length
+    };
+  }, [fiados]);
+
+  async function applyFiadoFilters(nextFilters) {
+    const filters = { ...fiadoFilters, ...nextFilters };
+    setFiadoFilters(filters);
+    const data = await listFiados(filters);
+    setFiados(data);
+  }
+
+  return (
+    <div className="admin-page">
+      <header className="admin-header">
         <div>
-          <p className="eyebrow">LotoGestor</p>
-          <h1>Controle de caixa e fiados em um painel simples.</h1>
-          <p className="subtitle">
-            React no frontend, Spring Boot no backend, com foco em fluxo diario.
-          </p>
+          <h1>Olá, {user.nomeCompleto.split(" ")[0]}</h1>
+          <p className="muted">Painel administrativo</p>
         </div>
-        <div className="status-card">
-          <p className="label">Status do caixa</p>
-          <p className={`status ${dashboard.hasCaixaAberto ? "open" : "closed"}`}>
-            {dashboard.hasCaixaAberto ? "Aberto hoje" : "Sem abertura hoje"}
-          </p>
-          <p className="hint">Atualizado em tempo real com a API.</p>
-        </div>
+        <button type="button" className="icon-button" onClick={onLogout} aria-label="Sair">
+          <span className="logout-icon"></span>
+        </button>
       </header>
 
-      {(notice || error) && (
-        <div className={`banner ${error ? "error" : "success"}`}>
-          {error || notice}
+      <section className="summary">
+        <div className="summary-title">Valor a Receber da Caixa</div>
+        <div className="summary-cards">
+          <MetricCard title="Instantâneas" value={dashboard.instantaneas} icon="key" />
+          <MetricCard title="MarketPlace" value={dashboard.marketplace} icon="cart" />
+          <MetricCard title="Tele-Senas" value={dashboard.telesenas} icon="doc" />
+          <MetricCard title="Valor Total a Receber" value={dashboard.totalReceber} icon="money" highlight />
         </div>
+      </section>
+
+      <nav className="tabs">
+        {tabs.map((tab) => (
+          <button
+            key={tab}
+            type="button"
+            className={tab === activeTab ? "active" : ""}
+            onClick={() => setActiveTab(tab)}
+          >
+            {tab}
+          </button>
+        ))}
+      </nav>
+
+      {activeTab === "Visão Geral" && (
+        <section className="panel-grid">
+          <ChartPanel title="Gráfico 1" />
+          <ChartPanel title="Gráfico 2" />
+        </section>
       )}
 
-      {loading ? (
-        <div className="loading">Carregando dados...</div>
-      ) : (
-        <main className="grid">
-          <section className="panel">
-            <h2>Cadastro rapido de pessoa</h2>
-            <p className="panel-sub">
-              Adicione nomes para usar nos lancamentos de fiado.
-            </p>
-            <form onSubmit={handlePessoaSubmit} className="form">
-              <input
-                type="text"
-                placeholder="Nome completo"
-                value={novaPessoa}
-                onChange={(event) => setNovaPessoa(event.target.value)}
-                required
-              />
-              <button type="submit">Salvar</button>
-            </form>
-            <div className="tags">
-              {dashboard.pessoas.map((pessoa) => (
-                <span key={pessoa.id}>{pessoa.nome}</span>
-              ))}
-            </div>
-          </section>
-
-          <section className="panel">
-            <h2>Lancar fiado</h2>
-            <p className="panel-sub">Registre vendas fiadas do dia.</p>
-            <form onSubmit={handleFiadoSubmit} className="form">
-              <input
-                type="date"
-                value={novoFiado.data}
-                onChange={(event) =>
-                  setNovoFiado((prev) => ({ ...prev, data: event.target.value }))
-                }
-                required
-              />
-              <input
-                list="pessoas"
-                placeholder="Pessoa"
-                value={novoFiado.pessoa}
-                onChange={(event) =>
-                  setNovoFiado((prev) => ({ ...prev, pessoa: event.target.value }))
-                }
-                required
-              />
-              <input
-                type="number"
-                step="0.01"
-                placeholder="Valor"
-                value={novoFiado.valor}
-                onChange={(event) =>
-                  setNovoFiado((prev) => ({ ...prev, valor: event.target.value }))
-                }
-                required
-              />
-              <input
-                type="text"
-                placeholder="Descricao"
-                value={novoFiado.descricao}
-                onChange={(event) =>
-                  setNovoFiado((prev) => ({ ...prev, descricao: event.target.value }))
-                }
-              />
-              <button type="submit">Registrar fiado</button>
-            </form>
-
-            <datalist id="pessoas">
-              {pessoasNomes.map((nome) => (
-                <option key={nome} value={nome} />
-              ))}
-            </datalist>
-          </section>
-
-          <section className="panel span-2">
-            <div className="panel-header">
-              <h2>Fiados recentes</h2>
-              <span className="counter">{dashboard.fiados.length} itens</span>
-            </div>
-            <div className="table">
-              <div className="table-row head">
-                <span>Data</span>
-                <span>Pessoa</span>
-                <span>Valor</span>
-                <span>Descricao</span>
-                <span></span>
-              </div>
-              {dashboard.fiados.map((fiado) => (
-                <div key={fiado.id} className="table-row">
-                  <span>{fiado.data}</span>
-                  <span>{fiado.pessoa}</span>
-                  <span>R$ {Number(fiado.valor).toFixed(2)}</span>
-                  <span>{fiado.descricao || "-"}</span>
-                  <button type="button" onClick={() => handleFiadoDelete(fiado.id)}>
-                    Remover
-                  </button>
+      {activeTab === "Caixas" && (
+        <section className="panel-box">
+          <div className="panel-header">
+            <div className="panel-title">Todos os Caixas</div>
+            <button type="button" className="circle-button" onClick={() => setUserModalMode("create")}>
+              +
+            </button>
+          </div>
+          <div className="caixas-grid">
+            {operadores.map((operador, index) => (
+              <div key={operador.id} className="caixa-card">
+                <div className="caixa-top">
+                  <span>Caixa {index + 1}</span>
+                  <div className="card-actions">
+                    <button
+                      type="button"
+                      className="icon-edit"
+                      aria-label="Editar caixa"
+                      onClick={() => {
+                        setEditingUser(operador);
+                        setUserModalMode("edit");
+                      }}
+                    >
+                      <span className="edit-icon"></span>
+                    </button>
+                    <button
+                      type="button"
+                      className="icon-delete"
+                      aria-label="Excluir caixa"
+                      onClick={() => handleDeleteUser(operador.id)}
+                    >
+                      <span className="trash-icon"></span>
+                    </button>
+                  </div>
                 </div>
-              ))}
-            </div>
-          </section>
+                <div
+                  className={`avatar ${operador.fotoUrl ? "has-photo" : ""}`}
+                  style={
+                    operador.fotoUrl
+                      ? { backgroundImage: `url(${resolveImageUrl(operador.fotoUrl)})` }
+                      : undefined
+                  }
+                >
+                  {!operador.fotoUrl && operador.nomeCompleto.charAt(0)}
+                </div>
+                <p>{operador.nomeCompleto}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
-          <section className="panel">
-            <h2>Abertura de caixa</h2>
-            <form onSubmit={handleAberturaSubmit} className="form grid-form">
+      {activeTab === "Fiados" && (
+        <section className="panel-box">
+          <div className="panel-title">Gestão de Fiados</div>
+          <div className="filters">
+            <label>
+              Operador
+              <select
+                value={fiadoFilters.operadorId}
+                onChange={(event) => applyFiadoFilters({ operadorId: event.target.value })}
+              >
+                <option value="">Todos</option>
+                {operadores.map((operador) => (
+                  <option key={operador.id} value={operador.id}>
+                    {operador.nomeCompleto}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Pessoa
+              <input
+                type="text"
+                placeholder="Todas"
+                value={fiadoFilters.pessoa}
+                onChange={(event) => applyFiadoFilters({ pessoa: event.target.value })}
+              />
+            </label>
+            <label>
+              Data Início
               <input
                 type="date"
-                value={abertura.data}
-                onChange={(event) =>
-                  setAbertura((prev) => ({ ...prev, data: event.target.value }))
-                }
-                required
+                value={fiadoFilters.dataInicio}
+                onChange={(event) => applyFiadoFilters({ dataInicio: event.target.value })}
               />
-              {renderMoneyInput(abertura, setAbertura, "moedas", "Moedas")}
-              {renderMoneyInput(abertura, setAbertura, "dinheiro", "Dinheiro")}
-              {renderMoneyInput(abertura, setAbertura, "bolao", "Bolao")}
-              {renderMoneyInput(abertura, setAbertura, "instantaneas", "Instantaneas")}
-              {renderMoneyInput(abertura, setAbertura, "telesena", "Telesena")}
-              {renderMoneyInput(abertura, setAbertura, "fiados", "Fiados")}
-              {renderMoneyInput(abertura, setAbertura, "deposito", "Deposito")}
-              {renderMoneyInput(abertura, setAbertura, "retirada", "Retirada")}
-              <button type="submit" className="full">Salvar abertura</button>
-            </form>
-          </section>
-
-          <section className="panel">
-            <h2>Fechamento de caixa</h2>
-            <form onSubmit={handleFechamentoSubmit} className="form grid-form">
+            </label>
+            <label>
+              Data Fim
               <input
                 type="date"
-                value={fechamento.data}
-                onChange={(event) =>
-                  setFechamento((prev) => ({ ...prev, data: event.target.value }))
-                }
-                required
+                value={fiadoFilters.dataFim}
+                onChange={(event) => applyFiadoFilters({ dataFim: event.target.value })}
               />
-              {renderMoneyInput(fechamento, setFechamento, "dinheiro", "Dinheiro")}
-              {renderMoneyInput(fechamento, setFechamento, "cheques", "Cheques")}
-              {renderMoneyInput(fechamento, setFechamento, "depositos", "Depositos")}
-              {renderMoneyInput(fechamento, setFechamento, "fiados", "Fiados")}
-              {renderMoneyInput(fechamento, setFechamento, "totalMoedas", "Total moedas")}
-              {renderMoneyInput(fechamento, setFechamento, "bolao", "Bolao")}
-              {renderMoneyInput(fechamento, setFechamento, "telesena", "Telesena")}
-              {renderMoneyInput(fechamento, setFechamento, "instantaneas", "Instantaneas")}
-              {renderMoneyInput(
-                fechamento,
-                setFechamento,
-                "telesenasTrocadas",
-                "Telesenas trocadas"
-              )}
-              <button type="submit" className="full">Salvar fechamento</button>
-            </form>
-          </section>
-        </main>
+            </label>
+          </div>
+
+          <div className="fiado-stats">
+            <StatCard title="Total Pendente" value={fiadoStats.pendente} tone="danger" icon="money" />
+            <StatCard title="Total Pago" value={fiadoStats.pago} tone="success" icon="check" />
+            <StatCard title="Quantidade" value={fiadoStats.quantidade} tone="info" icon="users" />
+          </div>
+
+          <div className="fiado-table">
+            <div className="fiado-row fiado-head">
+              <span>Data</span>
+              <span>Pessoa</span>
+              <span>Operador</span>
+              <span>Valor</span>
+                <span>Descrição</span>
+                <span>Status</span>
+                <span>Data do Pagamento</span>
+              </div>
+            {fiados.map((fiado) => (
+              <div key={fiado.id} className="fiado-row">
+                <span>{formatDateTime(fiado.data)}</span>
+                <span>{fiado.pessoa}</span>
+                <span>{fiado.operador || "-"}</span>
+                <span className={fiado.status === "PENDENTE" ? "danger" : "success"}>
+                  {formatCurrency(fiado.valor)}
+                </span>
+                <span>{fiado.descricao || "-"}</span>
+                <span>
+                  <span className={`status-pill ${fiado.status === "PAGO" ? "paid" : "pending"}`}>
+                    {fiado.status === "PAGO" ? "Pago" : "Pendente"}
+                  </span>
+                </span>
+                <span>{fiado.dataPagamento ? formatDateTime(fiado.dataPagamento) : "-"}</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {activeTab === "Relatórios" && (
+        <section className="panel-box empty">
+          <p>Relatórios serão adicionados em breve.</p>
+        </section>
+      )}
+
+      {userModalMode && (
+        <UserModal
+          mode={userModalMode}
+          initialUser={editingUser}
+          onClose={() => {
+            setUserModalMode(null);
+            setEditingUser(null);
+          }}
+          onSaved={(saved) => {
+            if (userModalMode === "create") {
+              setOperadores((prev) => [...prev, saved]);
+            } else {
+              setOperadores((prev) =>
+                prev.map((item) => (item.id === saved.id ? saved : item))
+              );
+            }
+            setUserModalMode(null);
+            setEditingUser(null);
+          }}
+        />
       )}
     </div>
   );
 }
 
-function renderMoneyInput(state, setter, field, label) {
+function UserModal({ mode, initialUser, onClose, onSaved }) {
+  const isEdit = mode === "edit";
+  const [form, setForm] = useState({
+    nomeCompleto: initialUser?.nomeCompleto || "",
+    email: initialUser?.email || "",
+    endereco: initialUser?.endereco || "",
+    cpf: initialUser?.cpf ? maskCpf(initialUser.cpf) : "",
+    senha: "",
+    role: initialUser?.role || "OPERADOR",
+    fotoUrl: initialUser?.fotoUrl || ""
+  });
+  const [fotoFile, setFotoFile] = useState(null);
+  const [cpfError, setCpfError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [error, setError] = useState("");
+  const [cameraOpen, setCameraOpen] = useState(false);
+  const [cameraError, setCameraError] = useState("");
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  function handleCpfChange(value) {
+    const masked = maskCpf(value);
+    setForm((prev) => ({ ...prev, cpf: masked }));
+    const digits = masked.replace(/\D/g, "");
+    if (digits.length === 11 && !isValidCpf(digits)) {
+      setCpfError("CPF inválido.");
+    } else {
+      setCpfError("");
+    }
+  }
+
+  function handleEmailChange(value) {
+    setForm((prev) => ({ ...prev, email: value }));
+    if (value && !isValidEmail(value)) {
+      setEmailError("Email inválido.");
+    } else {
+      setEmailError("");
+    }
+  }
+
+  async function handleSubmit(event) {
+    event.preventDefault();
+    setError("");
+    if (emailError) {
+      setError("Corrija o email antes de salvar.");
+      return;
+    }
+    const cpfDigits = form.cpf.replace(/\D/g, "");
+    if (cpfDigits.length !== 11) {
+      setError("CPF incompleto.");
+      return;
+    }
+    if (!isEdit && !form.senha) {
+      setError("Senha obrigatória.");
+      return;
+    }
+    if (cpfError) {
+      setError("Corrija o CPF antes de salvar.");
+      return;
+    }
+    try {
+      let fotoUrl = form.fotoUrl;
+      if (fotoFile) {
+        const upload = await uploadFoto(fotoFile);
+        fotoUrl = upload.url;
+      }
+      const payload = { ...form, cpf: cpfDigits, fotoUrl };
+      const saved = isEdit
+        ? await updateUsuario(initialUser.id, payload)
+        : await createUsuario(payload);
+      onSaved(saved);
+    } catch (err) {
+      setError(err.message || (isEdit ? "Erro ao atualizar usuário" : "Erro ao criar usuário"));
+    }
+  }
+
+  async function openCamera() {
+    setCameraError("");
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" }
+      });
+      streamRef.current = stream;
+      setCameraOpen(true);
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+      }
+    } catch (err) {
+      setCameraError("Nao foi possivel acessar a camera.");
+    }
+  }
+
+  function closeCamera() {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    setCameraOpen(false);
+  }
+
+  function capturePhoto() {
+    if (!videoRef.current) return;
+    const video = videoRef.current;
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth || 640;
+    canvas.height = video.videoHeight || 480;
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (!blob) return;
+      const file = new File([blob], `foto-${Date.now()}.jpg`, { type: "image/jpeg" });
+      setFotoFile(file);
+      closeCamera();
+    }, "image/jpeg", 0.92);
+  }
+
   return (
-    <input
-      key={field}
-      type="number"
-      step="0.01"
-      value={state[field]}
-      placeholder={label}
-      onChange={(event) => setter((prev) => ({ ...prev, [field]: event.target.value }))}
-      required
-    />
+    <div className="modal-backdrop">
+      <div className="modal">
+        <div className="modal-header">
+        <h3>{isEdit ? "Editar usuário" : "Novo usuário"}</h3>
+        <button type="button" className="icon-button" onClick={onClose}>✕</button>
+      </div>
+      <form className="modal-form" onSubmit={handleSubmit}>
+          <input
+            type="text"
+            placeholder="Nome completo"
+            value={form.nomeCompleto}
+            onChange={(event) => setForm((prev) => ({ ...prev, nomeCompleto: event.target.value }))}
+            required
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={form.email}
+            onChange={(event) => handleEmailChange(event.target.value)}
+            required
+          />
+          <input
+            type="text"
+            placeholder="Endereço"
+            value={form.endereco}
+            onChange={(event) => setForm((prev) => ({ ...prev, endereco: event.target.value }))}
+            required
+          />
+          <input
+            type="text"
+            placeholder="CPF"
+            value={form.cpf}
+            onChange={(event) => handleCpfChange(event.target.value)}
+            maxLength={14}
+            required
+          />
+        <input
+          type="password"
+          placeholder={isEdit ? "Nova senha (opcional)" : "Senha"}
+          value={form.senha}
+          onChange={(event) => setForm((prev) => ({ ...prev, senha: event.target.value }))}
+          required={!isEdit}
+        />
+          <select
+            value={form.role}
+            onChange={(event) => setForm((prev) => ({ ...prev, role: event.target.value }))}
+            required
+          >
+            <option value="GERENTE">Gerente</option>
+            <option value="OPERADOR">Operador</option>
+          </select>
+          <div className="file-field">
+            <label className="file-button">
+              Escolher arquivo
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(event) => setFotoFile(event.target.files[0] || null)}
+              />
+            </label>
+            <button
+              type="button"
+              className="file-button outline"
+              onClick={openCamera}
+            >
+              Tirar foto
+            </button>
+            <span className={`file-name ${fotoFile ? "selected" : ""}`}>
+              {fotoFile ? fotoFile.name : "Nenhuma imagem selecionada"}
+            </span>
+          </div>
+        {cpfError && <span className="error-text">{cpfError}</span>}
+        {emailError && <span className="error-text">{emailError}</span>}
+        {error && <span className="error-text">{error}</span>}
+        <button type="submit">{isEdit ? "Salvar alterações" : "Criar usuário"}</button>
+      </form>
+    </div>
+
+      {cameraOpen && (
+        <div className="modal-backdrop">
+          <div className="modal camera-modal">
+            <div className="modal-header">
+              <h3>Capturar foto</h3>
+              <button type="button" className="icon-button" onClick={closeCamera}>✕</button>
+            </div>
+            <video ref={videoRef} autoPlay playsInline className="camera-preview" />
+            <div className="camera-actions">
+              <button type="button" className="file-button outline" onClick={closeCamera}>
+                Cancelar
+              </button>
+              <button type="button" className="file-button" onClick={capturePhoto}>
+                Usar foto
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {cameraError && <span className="error-text">{cameraError}</span>}
+    </div>
   );
+}
+
+function MetricCard({ title, value, icon, highlight }) {
+  return (
+    <div className={`metric-card ${highlight ? "highlight" : ""}`}>
+      <div>
+        <span className="metric-title">{title}</span>
+        <strong>{formatCurrency(value)}</strong>
+      </div>
+      <span className={`metric-icon ${icon}`}></span>
+    </div>
+  );
+}
+
+function ChartPanel({ title }) {
+  return (
+    <div className="chart-panel">
+      <div className="chart-filter">⎇</div>
+      <div className="chart-title">{title}</div>
+    </div>
+  );
+}
+
+function StatCard({ title, value, tone, icon }) {
+  return (
+    <div className={`stat-card ${tone}`}>
+      <div>
+        <span>{title}</span>
+        <strong>{tone === "info" ? value : formatCurrency(value)}</strong>
+      </div>
+      <span className={`stat-icon ${icon}`}></span>
+    </div>
+  );
+}
+
+function formatCurrency(value) {
+  const number = Number(value || 0);
+  return number.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+function formatDateTime(value) {
+  if (!value) return "";
+  return new Date(value).toLocaleString("pt-BR");
+}
+
+function isValidEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
+function resolveImageUrl(url) {
+  if (!url) return url;
+  if (/^https?:\/\//i.test(url)) return url;
+  const base = (import.meta.env.VITE_API_BASE || "http://localhost:8080/api").replace(/\/api\/?$/, "");
+  return `${base}${url.startsWith("/") ? "" : "/"}${url}`;
+}
+
+function maskCpf(value) {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  const parts = [];
+  if (digits.length > 3) {
+    parts.push(digits.slice(0, 3));
+    if (digits.length > 6) {
+      parts.push(digits.slice(3, 6));
+      if (digits.length > 9) {
+        parts.push(digits.slice(6, 9));
+        return `${parts[0]}.${parts[1]}.${parts[2]}-${digits.slice(9)}`;
+      }
+      return `${parts[0]}.${parts[1]}.${digits.slice(6)}`;
+    }
+    return `${parts[0]}.${digits.slice(3)}`;
+  }
+  return digits;
+}
+
+function isValidCpf(cpf) {
+  if (!cpf || cpf.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(cpf)) return false;
+
+  let sum = 0;
+  for (let i = 0; i < 9; i += 1) {
+    sum += Number(cpf[i]) * (10 - i);
+  }
+  let first = (sum * 10) % 11;
+  if (first === 10) first = 0;
+  if (first !== Number(cpf[9])) return false;
+
+  sum = 0;
+  for (let i = 0; i < 10; i += 1) {
+    sum += Number(cpf[i]) * (11 - i);
+  }
+  let second = (sum * 10) % 11;
+  if (second === 10) second = 0;
+  return second === Number(cpf[10]);
 }

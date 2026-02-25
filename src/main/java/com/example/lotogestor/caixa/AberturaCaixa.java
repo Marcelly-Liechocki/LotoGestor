@@ -1,5 +1,6 @@
 package com.example.lotogestor.caixa;
 
+import com.example.lotogestor.usuario.Usuario;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import java.math.BigDecimal;
@@ -21,6 +22,9 @@ public class AberturaCaixa {
   @NotNull private BigDecimal deposito;
   @NotNull private BigDecimal retirada;
 
+  @ManyToOne
+  @JoinColumn(name = "operador_id")
+  private Usuario operador;
 
   public Long getId(){return id;}
   public LocalDate getData(){return data;}
@@ -41,4 +45,6 @@ public class AberturaCaixa {
   public void setDeposito(BigDecimal v){this.deposito=v;}
   public BigDecimal getRetirada(){return retirada;}
   public void setRetirada(BigDecimal v){this.retirada=v;}
+  public Usuario getOperador(){return operador;}
+  public void setOperador(Usuario operador){this.operador=operador;}
 }
